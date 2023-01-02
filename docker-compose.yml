@@ -1,0 +1,23 @@
+version: "3"
+services:
+  db: # MYSQLの設定 mysql:8.0
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password # mysql:8.0から必要
+    environment: # 環境変数
+      MYSQL_ROOT_PASSWORD: password # DockerのMySQLイメージ起動時に渡す環境変数
+      MYSQL_DATABASE: rails-db # DB名
+      MYSQL_PASSWORD: password # パスワード
+    volumes: # 左がローカルディレクトリ　右がDocker内のディレクトリ　同期する
+      - ./rails-api/db/mysql_data:/var/lib/mysql
+  web: # Railsの設定
+    build: # 同じディレクトリ内のDockerfileを参照する
+      context: ./rails-api/
+      dockerfile: Dockerfile
+    volumes: # 左がローカルディレクトリ　右がDocker内のディレクトリ 同期する
+      - ./rails-api:/app
+    ports: # 左ローカル 右Dockerに接続
+      - "3000:3000"
+    # tmp/pids/server.pidファイルを削除してRailsサーバーの起動
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    depends_on: # 依存関係 webサービスはdbサービスに依存しているという表記
+      - db
